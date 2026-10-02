@@ -118,22 +118,37 @@
 
   // ---------- Boot ----------
 
+  // Short links: "#<22-char secret>" → HKDF-SHA256 derives the folder id and the AES-256 key (matches the app).
+  async function deriveFromSecret(secret) {
+    const raw = b64urlToBytes(secret);
+    if (raw.length !== 16) throw new Error("bad secret");
+    const base = await crypto.subtle.importKey("raw", raw, "HKDF", false, ["deriveBits"]);
+    const salt = new TextEncoder().encode("TranScribe share");
+    const bits = (info, n) => crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: new TextEncoder().encode(info) }, base, n * 8);
+    const id = [...new Uint8Array(await bits("id", 6))].map((b) => b.toString(16).padStart(2, "0")).join("");
+    const key = await importKey(new Uint8Array(await bits("aes", 32)));
+    return { id, key };
+  }
+
   async function boot() {
     const frag = decodeURIComponent(location.hash.slice(1));
     const [main, ...params] = frag.split("&");
-    const dot = main.indexOf(".");
-    const id = main.slice(0, dot), keyText = main.slice(dot + 1);
-    if (!frag || dot < 1 || !/^[A-Za-z0-9_-]{6,40}$/.test(id) || keyText.length < 40) {
-      return fail("This link is incomplete", "Shared links end with a long code after “#”. Make sure you copied the whole link.");
-    }
-    state.fragment = main;
     const query = Object.fromEntries(params.map((p) => p.split("=")));
-
-    let key;
+    state.fragment = main;
+    let id, key;
     try {
-      key = await importKey(b64urlToBytes(keyText));
+      if (/^[A-Za-z0-9_-]{22}$/.test(main)) {
+        ({ id, key } = await deriveFromSecret(main));
+      } else {
+        // Older long links: "#<id>.<base64url key>".
+        const dot = main.indexOf(".");
+        id = main.slice(0, dot);
+        const keyText = main.slice(dot + 1);
+        if (dot < 1 || !/^[A-Za-z0-9_-]{6,40}$/.test(id) || keyText.length < 40) throw new Error("incomplete");
+        key = await importKey(b64urlToBytes(keyText));
+      }
     } catch {
-      return fail("This link is incomplete", "The code at the end of the link is damaged. Ask for the link again.");
+      return fail("This link is incomplete", "Shared links end with a code after “#”. Make sure you copied the whole link.");
     }
 
     let doc;
