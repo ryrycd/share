@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="light dark">
+  <title>Shared recording · TranScribe</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%235b5bd6'/%3E%3Cpath d='M8 13v6M12 9v14M16 12v8M20 7v18M24 13v6' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="viewer.css?v=9cffe75a081e">
+</head>
+<body>
+  <div id="loading" class="screen">
+    <div class="spinner" aria-hidden="true"></div>
+    <p id="loading-text">Opening shared recording…</p>
+  </div>
+
+  <div id="error" class="screen" hidden>
+    <div class="error-icon" aria-hidden="true">🔒</div>
+    <h1 id="error-title">This link doesn't work</h1>
+    <p id="error-text"></p>
+  </div>
+
+  <div id="app" hidden>
+    <header class="top">
+      <div class="brand" title="Shared with TranScribe">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M8 13v6M12 9v14M16 12v8M20 7v18M24 13v6" stroke="var(--brand-ink)" stroke-width="2.4" stroke-linecap="round"/></svg>
+      </div>
+      <div class="title-block">
+        <h1 id="title"></h1>
+        <div id="meta" class="meta"></div>
+      </div>
+      <div class="top-actions">
+        <button id="copy-link" class="btn" title="Copy link to this recording">
+          <span aria-hidden="true">🔗</span><span class="label">Copy link</span>
+        </button>
+        <div class="menu-wrap">
+          <button id="download-btn" class="btn primary" aria-haspopup="menu" aria-expanded="false">
+            <span aria-hidden="true">⤓</span><span class="label">Download</span>
+          </button>
+          <div id="download-menu" class="menu" role="menu" hidden>
+            <button role="menuitem" data-dl="audio" id="dl-audio">Audio</button>
+            <button role="menuitem" data-dl="txt">Transcript (.txt)</button>
+            <button role="menuitem" data-dl="md">Transcript + notes (.md)</button>
+            <button role="menuitem" data-dl="srt">Subtitles (.srt)</button>
+            <button role="menuitem" data-dl="print">Print / Save as PDF</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="mobile-tabs" role="tablist">
+      <button role="tab" data-pane="transcript" aria-selected="true">Transcript</button>
+      <button role="tab" data-pane="side" aria-selected="false" id="mobile-side-tab">Notes</button>
+    </nav>
+
+    <main class="layout">
+      <section class="pane transcript-pane active" id="pane-transcript" aria-label="Transcript">
+        <div class="search-bar">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input id="search" type="search" placeholder="Search the transcript" autocomplete="off" spellcheck="false" aria-label="Search the transcript">
+          <span id="search-count" class="search-count"></span>
+          <button id="search-prev" class="icon-btn" title="Previous match (Shift+Enter)" aria-label="Previous match">↑</button>
+          <button id="search-next" class="icon-btn" title="Next match (Enter)" aria-label="Next match">↓</button>
+        </div>
+        <div id="summary" class="summary" hidden></div>
+        <div id="transcript" class="transcript"></div>
+        <button id="follow" class="follow" hidden>↓ Follow along</button>
+      </section>
+
+      <aside class="pane side-pane" id="pane-side" aria-label="Notes">
+        <div class="tabs" role="tablist" id="side-tabs"></div>
+        <div id="side-content" class="side-content"></div>
+      </aside>
+    </main>
+
+    <footer class="player" id="player">
+      <audio id="audio" preload="auto"></audio>
+      <div class="controls">
+        <button id="back" class="icon-btn" title="Back 15 seconds (←)" aria-label="Back 15 seconds">↺<small>15</small></button>
+        <button id="play" class="play" title="Play / pause (Space)" aria-label="Play">
+          <svg id="icon-play" viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>
+          <svg id="icon-pause" viewBox="0 0 24 24" hidden><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>
+        </button>
+        <button id="fwd" class="icon-btn" title="Forward 15 seconds (→)" aria-label="Forward 15 seconds">↻<small>15</small></button>
+      </div>
+      <span id="time" class="time">0:00</span>
+      <div class="wave-wrap">
+        <canvas id="wave" aria-label="Seek bar" role="slider" tabindex="0"></canvas>
+        <div id="audio-status" class="audio-status"></div>
+      </div>
+      <span id="duration" class="time">0:00</span>
+      <select id="speed" class="speed" title="Playback speed" aria-label="Playback speed">
+        <option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option><option value="2.5">2.5×</option><option value="3">3×</option>
+      </select>
+      <button id="copy-time" class="icon-btn" title="Copy link to this moment" aria-label="Copy link to this moment">⌖</button>
+    </footer>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  </div>
+
+  <script src="viewer.js?v=9cffe75a081e"></script>
+</body>
+</html>
